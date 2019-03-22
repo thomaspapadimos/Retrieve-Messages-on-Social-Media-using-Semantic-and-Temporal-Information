@@ -9,7 +9,7 @@ from keras.models import Model
 import metrics
 
 
-def sm_model(embed_dim, max_query_len, max_doc_len, vocab_size, embeddings, addit_feat_len, no_conv_filters=100):
+def sm_model(embed_dim, max_query_len, max_doc_len, vocab_size, embeddings, addit_feat_len, addit_kde_len, no_conv_filters=100):
 
     """Neural architecture as mentioned in the original paper."""
     print('Preparing model with the following parameters: ')
@@ -66,13 +66,14 @@ def sm_model(embed_dim, max_query_len, max_doc_len, vocab_size, embeddings, addi
 
     # Input additional features.
     input_additional_feat = Input(shape=(addit_feat_len,), name='input_addn_feat')
+    input_kde_feat = Input(shape=(addit_kde_len,), name='input_k_feat')
 
     # Combine Question, sim, Answer pooled outputs and additional input features
-    join_layer = keras.layers.concatenate([pool_q, sim, pool_d, input_additional_feat])
+    join_layer = keras.layers.concatenate([pool_q, sim, pool_d, input_additional_feat, input_kde_feat])
     join_layer = Dropout(0.5)(join_layer)
 
     # hidden_units = join_layer.output_shape[1]
-    hidden_units = no_conv_filters + 1 + no_conv_filters + addit_feat_len
+    hidden_units = no_conv_filters + 1 + no_conv_filters + addit_feat_len + addit_kde_len
 
     # Using relu here too? Not mentioned in the paper.
     hidden_layer = Dense(units=hidden_units,
@@ -84,7 +85,7 @@ def sm_model(embed_dim, max_query_len, max_doc_len, vocab_size, embeddings, addi
     # Final Softmax Layer
     softmax_layer = Dense(1, activation='sigmoid')(hidden_layer)
 
-    model = Model(inputs=[input_q, input_d, input_additional_feat], outputs=softmax_layer)
+    model = Model(inputs=[input_q, input_d, input_additional_feat, input_kde_feat], outputs=softmax_layer)
 
     ada_delta = optimizers.Adadelta(rho=0.95, epsilon=1e-06)
     model.compile(optimizer=ada_delta, loss='binary_crossentropy', metrics=['accuracy', metrics.precision, metrics.recall])
