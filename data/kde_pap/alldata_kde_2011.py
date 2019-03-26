@@ -30,23 +30,31 @@ train_labels = []
 train_submission_ids = []
 train_extra_features = []
 
-train_dirs = ['trec-2011']
+train_dirs = ['trec-2014']
 
 for file in train_dirs:
-        with open(file + '/a.seq') as f:
-            query_sequences.extend(
-                [[0] if line is '\n' else list(map(int, line.replace('\n', '').split(','))) for line in f]) 
-    
-        with open(file + '/id_timestamps.txt') as f:
-            lines = [line.split(' ') for line in f]
-            tweets_timestamp=np.array([float(line[2]) for line in lines])
-            topic_id = np.array([int(line[0]) for line in lines]) 
-            docno = np.array([int(line[1]) for line in lines])        
-        with open(file + '/timestamps_of_topics.txt') as f:
-           lines = [line.split(' ') for line in f]
-           querys_timestamps = np.array([float(line[1]) for line in lines])
-        with open(file + '/sim.txt') as f:
-           test_labels = [[line.replace('\n', '')] for line in f]
+    if file == 'trec-2011':
+        n = 0
+    elif file == 'trec-2012':
+        n = 50
+    elif file == 'trec-2013':
+        n = 110
+    else:
+        n = 170
+    with open(file + '/a.seq') as f:
+        query_sequences.extend(
+            [[0] if line is '\n' else list(map(int, line.replace('\n', '').split(','))) for line in f]) 
+
+    with open(file + '/id_timestamps.txt') as f:
+        lines = [line.split(' ') for line in f]
+        tweets_timestamp=np.array([float(line[2]) for line in lines])
+        topic_id = np.array([int(line[0]) for line in lines]) - n
+        docno = np.array([int(line[1]) for line in lines])        
+    with open(file + '/timestamps_of_topics.txt') as f:
+        lines = [line.split(' ') for line in f]
+        querys_timestamps = np.array([float(line[1]) for line in lines])
+    with open(file + '/sim.txt') as f:
+        test_labels = [[line.replace('\n', '')] for line in f]
 
 
 sim = np.array(test_labels)
@@ -85,7 +93,7 @@ kde_eval=[[] for i in range(max(topic_id))]
 
 for j in range(max(topic_id)):
     
-    q_sub[j]=(np.full((len(q[j])), querys_timestamps[j], dtype=int)) - q[j]
+    q_sub[j]=(np.full((len(q[j])), querys_timestamps[j+n], dtype=int)) - q[j]
     xmax = max(q_sub[j])
     xmin = min(q_sub[j])
     kde = gaussian_kde(q_sub[j])
@@ -97,7 +105,7 @@ for j in range(max(topic_id)):
     fig = plt.figure()
     plt.plot(x_grid, kde_eval[j])
     plt.plot(q_sub[j], sim_class[j], 'ro')
-    plt.savefig('images/kde_plot_%d.png' %(j+1))
+    plt.savefig('images/%s_kde_plot_%d.png' %(file,(j+1+n)))
 #    plt.show()
     plt.close(fig)
 
@@ -108,7 +116,7 @@ for j in range(max(topic_id)):
      
 f= open("%skde.txt" % train_dirs,"w+")  
 for i in range(max(topic_id)): 
-    df = pd.DataFrame({'qid' : [i+1]*len(kde_eval[i]), 'docn' : docno_class[i], 'sim' : kde_eval[i]})
+    df = pd.DataFrame({'qid' : [i+1+n]*len(kde_eval[i]), 'docn' : docno_class[i], 'sim' : kde_eval[i]})
    # df=df.sort_values(by=['sim'] , ascending=False)
     #df=df.reset_index(drop=True)
     for j in range(len(kde_eval[i])):        

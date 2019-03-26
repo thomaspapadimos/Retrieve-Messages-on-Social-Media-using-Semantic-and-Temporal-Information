@@ -133,10 +133,10 @@ def train_model():
     clear_session()
 
 
-    all_dirs = ['trec-2014','trec-2013', 'trec-2012', 'trec-2011']
+    all_dirs = ['trec-2014', 'trec-2013', 'trec-2012', 'trec-2011']
     for test_dir in all_dirs:
 
-      #  train_dirs = ['trec-2013', 'trec-2012', 'trec-2011']
+       # train_dirs = ['trec-2014', 'trec-2012', 'trec-2011']
         train_dirs = list(all_dirs)
         train_dirs.remove(test_dir)
         print('TEST ON %s, TRAIN ON %s ' % (test_dir, train_dirs))
@@ -171,13 +171,13 @@ def train_model():
         
         
         for epoch in range(config.EPOCHS):
-            f= open("%s_kde_predictions.txt" %test_dir,"w+") 
-        
+            
 
             if early_stop:
                 print("Early Stopping. Epoch: {}".format(epoch))
                 break
-
+            
+            f= open("%s_kde_predictions.txt" %test_dir,"w+") 
             batches = zip(batch_gen(q_train, config.BATCH_SIZE),
                           batch_gen(d_train, config.BATCH_SIZE),
                           batch_gen(y_train, config.BATCH_SIZE),
