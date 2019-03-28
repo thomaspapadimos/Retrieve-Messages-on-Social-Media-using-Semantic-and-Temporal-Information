@@ -43,7 +43,7 @@ def create_train_data(train_dirs, include_extra_features=True):
         with open(config.DATA_PATH + file + '/kde.txt') as f:
             temp_kde = [line.replace('\n', '').split(' ') for line in f]
             train_submission_kde.extend(temp_kde)
-            train_kde_data.extend([[1 / np.log(1 + int(line[3]))] for line in temp_kde])
+            train_kde_data.extend([[float(line[4])] for line in temp_kde])
            # train_kde_data.extend([[float(line)] for line in f])
     
     train_query_sequences = pad_sequences(train_query_sequences, maxlen=config.QUERY_MAX_SEQUENCE_LENGTH)
@@ -76,7 +76,7 @@ def create_test_data(test_dir, include_extra_features=True):
         test_extra_features = [[1 / np.log(1 + int(line[3]))] for line in test_submission_ids]
     with open(config.DATA_PATH + test_dir + '/kde.txt') as f:
         test_submission_kde = [line.replace('\n', '').split(' ') for line in f]
-        test_kde_data = [[1 / np.log(1 + float(line[3]))] for line in test_submission_kde]
+        test_kde_data = [[float(line[4])] for line in test_submission_kde]
 
     q_test = np.array(test_query_sequences)
     d_test = np.array(test_document_sequences)
@@ -177,7 +177,7 @@ def train_model():
                 print("Early Stopping. Epoch: {}".format(epoch))
                 break
             
-            f= open("%s_kde_predictions.txt" %test_dir,"w+") 
+             
             batches = zip(batch_gen(q_train, config.BATCH_SIZE),
                           batch_gen(d_train, config.BATCH_SIZE),
                           batch_gen(y_train, config.BATCH_SIZE),
@@ -198,10 +198,7 @@ def train_model():
             y_pred = sm_model.predict([q_test, d_test, addit_feat_test, addit_kde_test])
             
         
-            for i in range(len(q_test)): 
-                f.writelines(str(qids_test[i]) + ' ' + 'Q0' + ' ' +  str(docn_test[i]) + ' ' + str(0) + ' ' + '%f' %y_pred[i]  +  ' ' + 'lucene4lm' + '\n')
-            
-            f.close()
+           
             
 
             test_acc = roc_auc_score(y_test, y_pred)
@@ -222,6 +219,13 @@ def train_model():
             if test_map > best_test_map:
                 iters_not_improved = 0
                 best_test_map = test_map
+                
+                f= open("%s_kde_predictions.txt" %test_dir,"w+")
+                for i in range(len(q_test)): 
+                    f.writelines(str(qids_test[i]) + ' ' + 'Q0' + ' ' +  str(docn_test[i]) + ' ' + str(0) + ' ' + '%f' %y_pred[i]  +  ' ' + 'lucene4lm' + '\n')
+            
+                f.close()
+            
             else:
                 iters_not_improved += 1
                 if iters_not_improved >= 5:  

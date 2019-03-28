@@ -106,7 +106,7 @@ f= open("%skde.txt" % train_dirs,"w+")
 for i in range(max(topic_id)): 
     df = pd.DataFrame({'qid' : [i+51]*len(kde_eval[i]), 'docn' : docno_class[i], 'sim' : kde_eval[i]})
     df=df.sort_values(by=['sim'] , ascending=False)
-    df=df.reset_index(drop=True)
+    #df=df.reset_index(drop=True)
     for j in range(len(kde_eval[i])):        
         f.writelines(str(df.qid[j]) + ' ' + 'Q0' + ' ' + str(df.docn[j]) + ' ' + str(df.index[j]+1) +  ' ' + str("%.6f" %df.sim[j]) +  ' ' + 'lucene4lm' + '\n')
 f.close()    

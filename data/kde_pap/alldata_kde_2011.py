@@ -30,7 +30,7 @@ train_labels = []
 train_submission_ids = []
 train_extra_features = []
 
-train_dirs = ['trec-2014']
+train_dirs = ['trec-2011']
 
 for file in train_dirs:
     if file == 'trec-2011':
@@ -41,10 +41,9 @@ for file in train_dirs:
         n = 110
     else:
         n = 170
-    with open(file + '/a.seq') as f:
-        query_sequences.extend(
-            [[0] if line is '\n' else list(map(int, line.replace('\n', '').split(','))) for line in f]) 
-
+    with open(file + '/id.txt') as f:
+        test_submission_ids = [line.replace('\n', '').split(' ') for line in f]
+        rank_feature = np.array([float(line[3]) for line in test_submission_ids])
     with open(file + '/id_timestamps.txt') as f:
         lines = [line.split(' ') for line in f]
         tweets_timestamp=np.array([float(line[2]) for line in lines])
@@ -60,11 +59,13 @@ for file in train_dirs:
 sim = np.array(test_labels)
 sim = sim.astype(np.int)
 q=[[] for i in range(max(topic_id))]
+ranks=[[] for i in range(max(topic_id))]
 docno_class = [[] for i in range(max(topic_id))]
 sim_class = [[] for i in range(max(topic_id))]
 
-for t in range(len(query_sequences)):
+for t in range(len(test_labels)):
     
+    ranks[topic_id[t]-1].append(float(np.exp(-rank_feature[t])))
     q[topic_id[t]-1].append(float(tweets_timestamp[t]))
     docno_class[topic_id[t]-1].append(docno[t])
     sim_class[topic_id[t]-1].append(sim[t])
@@ -90,17 +91,32 @@ for t in range(len(query_sequences)):
 
 q_sub=[[] for i in range(max(topic_id))]
 kde_eval=[[] for i in range(max(topic_id))]
-
+v=[]
+w=[[] for i in range(max(topic_id))]
 for j in range(max(topic_id)):
     
+    
     q_sub[j]=(np.full((len(q[j])), querys_timestamps[j+n], dtype=int)) - q[j]
+    q_sub[j]= (q_sub[j]/(3600*24))[:, np.newaxis]
     xmax = max(q_sub[j])
     xmin = min(q_sub[j])
-    kde = gaussian_kde(q_sub[j])
-    f = kde.covariance_factor()
-  
-    x_grid = np.linspace(xmin,xmax,len(q_sub[j]))
-    kde_eval[j] = kde.evaluate(x_grid)*10**6
+    w[j] = ranks[j] / (np.full((len(q[j])), sum(ranks[j]), dtype=float))
+    
+#    kde = gaussian_kde(q_sub[j])
+#    f = kde.covariance_factor()
+    x_grid = np.linspace(xmin,xmax,len(q_sub[j]))[:, np.newaxis]
+#    kde_eval[j] = kde.evaluate(x_grid)
+    
+    for x in q_sub[j]:
+        for y in x:
+            v.append(y)
+    
+    h= (4*(statistics.stdev(v)**5)/3*len(q_sub[j]))**(-1/5) 
+    kde = KernelDensity(kernel='gaussian',bandwidth=h ).fit(q_sub[j], w[j])
+    #kde = KernelDensity(kernel='gaussian').fit(q_sub[j])
+    
+    log_dens = kde.score_samples(x_grid)
+    kde_eval[j] = np.exp(log_dens)
     
     fig = plt.figure()
     plt.plot(x_grid, kde_eval[j])
@@ -117,10 +133,10 @@ for j in range(max(topic_id)):
 f= open("%skde.txt" % train_dirs,"w+")  
 for i in range(max(topic_id)): 
     df = pd.DataFrame({'qid' : [i+1+n]*len(kde_eval[i]), 'docn' : docno_class[i], 'sim' : kde_eval[i]})
-   # df=df.sort_values(by=['sim'] , ascending=False)
+    df=df.sort_values(by=['sim'] , ascending=False)
     #df=df.reset_index(drop=True)
     for j in range(len(kde_eval[i])):        
-        f.writelines(str(df.qid[j]) + ' ' + 'Q0' + ' ' + str(df.docn[j]) + ' ' + str(df.index[j]+1) +  ' ' + str("%.6f" %df.sim[j]) +  ' ' + 'lucene4lm' + '\n')
+        f.writelines(str(df.qid[j]) + ' ' + 'Q0' + ' ' + str(df.docn[j]) + ' ' + str(df.index[j]+1) +  ' ' + str("%f" %df.sim[j]) +  ' ' + 'lucene4lm' + '\n')
 f.close()    
 
 
