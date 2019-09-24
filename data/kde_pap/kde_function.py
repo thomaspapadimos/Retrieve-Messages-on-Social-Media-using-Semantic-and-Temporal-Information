@@ -1,17 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.stats import norm
-from sklearn.neighbors import KernelDensity
 from scipy import stats
-from KDEpy import FFTKDE
 from matplotlib.pyplot import plot
-from numpy import array, linspace
-
-import matplotlib.pyplot as plt
-from scipy import stats
-import statistics
 from scipy.stats import gaussian_kde
-from pylab import plot
+
 
 tweets_time = open("id_timestamps.txt","r") 
 lines = [line.split(' ') for line in tweets_time]
@@ -24,11 +16,8 @@ querys = np.array([int(line[1]) for line in lines])
 
 
 data2=np.full((796), querys[0], dtype=int)
-data3 = data2 - tweets
+data3 = (data2 - tweets)/3600*24
 
-sim = open("sim.txt","r") 
-lines = [line.split('\n') for line in sim]
-similarity = [int(line[0]) for line in lines]
 
 xmax= max(data3)
 xmin = min(data3)
