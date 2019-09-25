@@ -12,7 +12,7 @@ train_labels = []
 train_submission_ids = []
 train_extra_features = []
 
-train_dirs = ['trec-2014']
+train_dirs = ['trec-2011']
 
 for file in train_dirs:
     if file == 'trec-2011':
@@ -30,7 +30,7 @@ for file in train_dirs:
         lines = [line.split(' ') for line in f]
         tweets_timestamp=np.array([float(line[2]) for line in lines])
         topic_id = np.array([int(line[0]) for line in lines]) - n
-        docno = np.array([int(line[1]) for line in lines])        
+        docno = np.array([int(line[1]) for line in lines])
     with open(file + '/timestamps_of_topics.txt') as f:
         lines = [line.split(' ') for line in f]
         querys_timestamps = np.array([float(line[1]) for line in lines])
@@ -72,13 +72,12 @@ for t in range(len(test_labels)):
 #    f.writelines(str(kde_eval[i]) + '\n')
 #f.close()
 
-q_sub=[[] for i in range(max(topic_id))]
-kde_eval=[[] for i in range(max(topic_id))]
-v=[]
-w=[[] for i in range(max(topic_id))]
+q_sub = [[] for i in range(max(topic_id))]
+kde_eval = [[] for i in range(max(topic_id))]
+entrop = [[] for i in range(max(topic_id))]
+v = []
+w = [[] for i in range(max(topic_id))]
 for j in range(max(topic_id)):
-
-
     q_sub[j]=(np.full((len(q[j])), querys_timestamps[j+n], dtype=int)) - q[j]
     q_sub[j]= (q_sub[j]/(3600*24))[:, np.newaxis]
     xmax = max(q_sub[j])
@@ -103,6 +102,8 @@ for j in range(max(topic_id)):
 
     log_dens = kde.score_samples(x_grid)
     kde_eval[j] = np.exp(log_dens)
+    entrop[j]=(np.full((len(q[j])), entropy(kde_eval[j]), dtype=float))
+
 
     fig = plt.figure()
     plt.plot(x_grid, kde_eval[j])
@@ -119,12 +120,20 @@ for j in range(max(topic_id)):
 f= open("%skde.txt" % train_dirs,"w+")
 for i in range(max(topic_id)):
     df = pd.DataFrame({'qid' : [i+1+n]*len(kde_eval[i]), 'docn' : docno_class[i], 'sim' : kde_eval[i]})
-    df=df.sort_values(by=['sim'] , ascending=False)
+    #df=df.sort_values(by=['sim'] , ascending=False)
     #df=df.reset_index(drop=True)
     for j in range(len(kde_eval[i])):
         f.writelines(str(df.qid[j]) + ' ' + 'Q0' + ' ' + str(df.docn[j]) + ' ' + str(df.index[j]+1) +  ' ' + str("%f" %df.sim[j]) +  ' ' + 'lucene4lm' + '\n')
 f.close()
 
+f= open("%sEntropy.txt" % train_dirs,"w+")
+for i in range(max(topic_id)):
+    df = pd.DataFrame({'qid' : [i+1+n]*len(kde_eval[i]), 'docn' : docno_class[i], 'entropy' : entrop[i]})
+    #df=df.sort_values(by=['sim'] , ascending=False)
+    #df=df.reset_index(drop=True)
+    for j in range(len(kde_eval[i])):
+        f.writelines(str(df.qid[j]) + ' ' + 'Q0' + ' ' + str(df.docn[j]) + ' ' + str(df.index[j]+1) +  ' ' + str("%f" %df.entropy[j]) +  ' ' + 'lucene4lm' + '\n')
+f.close()
 
 
 #df = pd.DataFrame({'qid' : [0+51]*len(kde_eval[0]), 'docn' : docno_class[0], 'sim' : kde_eval[0]})
