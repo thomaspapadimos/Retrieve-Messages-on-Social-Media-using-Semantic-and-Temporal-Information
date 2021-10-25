@@ -13,6 +13,7 @@ The purpose of this project is to tackle the problem of event-based information 
 
 Each document contains a number of relevant and irrelevant tweets in a specific query scenario. The observation of the temporal feature is that the relevant tweets are grouped in the most high Density.
 
+![Architect](https://github.com/thomaspapadimos/Retreival-messages/blob/master/TF_architect.png)
 ![Architect](https://github.com/thomaspapadimos/Retreival-messages/blob/master/KDE_plot.png)
 
 ## How the Temporal Feature (KDE) affect on tweets
