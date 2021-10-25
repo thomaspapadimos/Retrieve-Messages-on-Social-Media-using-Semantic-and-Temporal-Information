@@ -9,8 +9,20 @@ The purpose of this project is to tackle the problem of event-based information 
 
 ![Architect](https://github.com/thomaspapadimos/Retreival-messages/blob/master/ARCHITECT.png)
 
+## Temporal Feature 
+
+Each document contains a number of relevant and irrelevant tweets in a specific query scenario. The observation of the temporal feature is that the relevant tweets are grouped in the most high Density.
+
+![Architect](https://github.com/thomaspapadimos/Retreival-messages/blob/master/KDE_plot.png)
+
+## How the Temporal Feature (KDE) affect on tweets
+Given a query we first retrieve an initial set of potentially relevant documents, which then are reranked by the neural network approach proposed in this work. We compare two different models. Plain_NN model contains only text features in contrast with ET_NN which considers the temporal feature also. In the plots below, relevant tweets have higher rank-score (more relevant) and irrelevant lower rank-sxore with the help of the Temporal Feature.
+
+![Architect](https://github.com/thomaspapadimos/Retreival-messages/blob/master/relevant_tweets_score.png)
+![Architect](https://github.com/thomaspapadimos/Retreival-messages/blob/master/Irrelevant_tweets_score.png)
+
 About author
 ------------
 - Thomas Papadimos
-- thomas5papad@gmail.com
+- papadimosth@gmail.com
 - 2018-2019
